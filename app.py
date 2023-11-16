@@ -1,23 +1,21 @@
-
+from http import HTTPStatus
+from flask import flash, request
 import sys
-from flask import Flask
+from extensions import db
+from flask import Flask, jsonify, redirect, render_template, url_for
 from flask_migrate import Migrate
 from flask_restful import Api
-
+from models.recipe import Recipe
 from config import Config
-from extensions import db
-
-from resources.user import UserListResource
-from resources.recipe import RecipeListResource, RecipeResource, RecipePublishResource
 
 
 def create_app():
     print("Hello", file=sys.stderr)
     app = Flask(__name__)
     app.config.from_object(Config)
-
     register_extensions(app)
-    register_resources(app)
+
+    routes(app)
 
     return app
 
@@ -26,15 +24,85 @@ def register_extensions(app):
     db.init_app(app)
     migrate = Migrate(app, db)
 
+def routes(app):
+    @app.route('/')
+    def home():
 
-def register_resources(app):
-    api = Api(app)
+        return render_template('index.html')
 
-    api.add_resource(UserListResource, '/users')
-    api.add_resource(RecipeListResource, '/recipes')
-    api.add_resource(RecipeResource, '/recipes/<int:recipe_id>')
-    api.add_resource(RecipePublishResource, '/recipes/<int:recipe_id>/publish')
+    @app.route('/recipes')
+    def all():
+        all_recipes = Recipe.get_all()
+        return render_template('index.html', recipes=all_recipes)
+    @app.route('/search')
+    def get_by_id():
+        rid = request.args.get('search')
+        if rid.isdigit():
+            rid = int(rid)
+            data = Recipe.get_by_id(rid)
+            if data is None:
+                return  {"Message":" recipe not found"}
+            return render_template('search-recipe.html',recipes=data)
+        return {"Message":"Entry type shoulb be integer or number"}
 
+    @app.route('/update-recipe',methods=["POST"])
+    def update_recipe():
+        recipe_id = request.form.get('id')
+        name = request.form.get('name')
+        instructions = request.form.get('instructions')
+        data = {
+        'name': name,
+        'instructions': instructions
+        }
+        response, status = Recipe.update(recipe_id, data)
+        if status == HTTPStatus.OK:
+            return jsonify(response), status
+        else:
+            return jsonify({'message': 'Update failed'}), status
+
+    @classmethod
+    def add(cls, data):
+        # Replace this with your actual logic for adding a new recipe
+        # For example, you might want to save the recipe to a database and return the new recipe data
+        # Replace the following line with your actual logic
+        new_recipe_data = {'id': 1, 'name': data['name'], 'instructions': data['instructions']}
+        return new_recipe_data, HTTPStatus.CREATED
+    
+    @app.route('/add-recipe', methods=["GET", "POST"])
+    def add_recipe():
+        if request.method == 'POST':
+            name = request.form.get('name')
+            instructions = request.form.get('instructions')
+            ingredients = request.form.get('ingredients')
+            category = request.form.get('category')
+            rating = int(request.form.get('rating'))
+
+            # Validate if required fields are provided
+            if not name or not instructions or not ingredients or not category or not rating:
+                return jsonify({'message': 'All fields are required.'}), HTTPStatus.BAD_REQUEST
+
+            data = {
+                'name': name,
+                'instructions': instructions,
+                'ingredients': ingredients,
+                'category': category,
+                'rating': rating
+            }
+
+            response, status = Recipe.add(data)
+
+            if status == HTTPStatus.CREATED:
+                return jsonify(response), status
+            else:
+                return jsonify({'message': 'Recipe creation failed'}), status
+
+        # If the request method is GET, render the add_recipe.html template
+        return render_template('add_recipe.html')
+        
+    @app.route("/<int:recipe_id>/delete")
+    def delete_recipe(recipe_id):
+        respones , status = Recipe.delete(recipe_id)
+        return respones
 
 
 if __name__ == '__main__':
