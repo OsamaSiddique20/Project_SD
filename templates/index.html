@@ -52,6 +52,19 @@
 </head>
 <body>
     <h1>Recipes List</h1>
+    <div style="margin-left: 223px;">
+    <a href="{{ url_for('add_recipe', _external=True).rstrip('/') }}" 
+    style="text-decoration: none; 
+           color: white; 
+          
+           background-color: #28a745; 
+           padding: 8px 12px; 
+           border-radius: 5px; 
+           display: inline-block;">
+     Add Recipe
+ </a>
+</div>
+
     <table border="1">
         <thead>
             <tr>
@@ -60,7 +73,8 @@
                 <th>Ingredients</th>
                 <th>Category</th>
                 <th>Rating</th>
-                <th></th>
+       
+                <th colspan="2">Edit / Delete</th>
             </tr>
         </thead>
         <tbody>
@@ -71,10 +85,10 @@
                     <td>{{ recipe['ingredients'] }}</td>
                     <td>{{ recipe['category'] }}</td>
                     <td>{{ recipe['rating'] }}</td>
-                    <td><a href="/update-recipe">Edit</a></td>
+                    <td><a href="/update-recipe/{{ recipe['recipe_id'] }}" style="text-decoration: none; color: #007bff; font-weight: bold;">Edit</a></td>
 
-                    <td><a href="/{{ recipe['id'] }}/delete">Delete</a></td>
-  
+                    <td><a href="/delete/{{ recipe['recipe_id'] }}" style="text-decoration: none; color: #dc3545; font-weight: bold;">Delete</a></td>
+                    
                 </tr>
             {% endfor %}
         </tbody>

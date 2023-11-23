@@ -8,7 +8,6 @@ from flask_restful import Api
 from models.recipe import Recipe
 from config import Config
 
-
 def create_app():
     print("Hello", file=sys.stderr)
     app = Flask(__name__)
@@ -19,18 +18,16 @@ def create_app():
 
     return app
 
-
 def register_extensions(app):
     db.init_app(app)
     migrate = Migrate(app, db)
 
 def routes(app):
     @app.route('/')
-   
 
     def all():
         all_recipes = Recipe.get_all()
-        print
+        
         return render_template('index.html', recipes=all_recipes)
 
     # @app.route('/recipes')
@@ -45,27 +42,39 @@ def routes(app):
                 return  {"Message":" recipe not found"}
             return render_template('search-recipe.html',recipes=data)
         return {"Message":"Entry type should be integer or number"}
+    
 
-    @app.route('/update-recipe',methods=["GET","POST"])
-    def update_recipe():
-        recipe_id = request.form.get('id')
-        name = request.form.get('name')
-        instructions = request.form.get('instructions')
-        data = {
-        'name': name,
-        'instructions': instructions
-        }
-        response, status = Recipe.update(recipe_id, data)
-        if status == HTTPStatus.OK:
-            return jsonify(response), status
+    @app.route('/update-recipe/<int:recipe_id>', methods=["GET", "POST"])
+    def update_recipe(recipe_id):
+        if request.method == 'POST':
+            name = request.form.get('name')
+            instructions = request.form.get('instructions')
+            ingredients = request.form.get('ingredients')
+            category = request.form.get('category')
+            rating = request.form.get('rating')
+
+            data = {
+                'name': name,
+                'instructions': instructions,
+                'ingredients': ingredients,
+                'category': category,
+                'rating': rating
+            }
+
+            response, status = Recipe.update(recipe_id, data)
+            all_recipes = Recipe.get_all()
+        
+            return render_template('index.html', recipes=all_recipes)
+
         else:
-            return jsonify({'message': 'Update failed'}), status
+            
+            recipe = Recipe.query.get(recipe_id)
+            if recipe:
+                return render_template("update.html", recipe=recipe)
+            else:
+                return jsonify({'message': 'Recipe not found'}), HTTPStatus.NOT_FOUND
 
-    @classmethod
-    def add(cls, data):
 
-        new_recipe_data = {'id': 1, 'name': data['name'], 'instructions': data['instructions']}
-        return new_recipe_data, HTTPStatus.CREATED
     
     @app.route('/add-recipe', methods=["GET", "POST"])
     def add_recipe():
@@ -87,19 +96,23 @@ def routes(app):
             }
 
             response, status = Recipe.add(data)
+            all()
+            all_recipes = Recipe.get_all()
+        
+            return render_template('index.html', recipes=all_recipes)
+            
 
-            if status == HTTPStatus.CREATED:
-                return jsonify(response), status
-            else:
-                return jsonify({'message': 'Recipe creation failed'}), status
 
         return render_template('add_recipe.html')
         
-    @app.route("/<int:recipe_id>/delete")
+    @app.route("/delete/<int:recipe_id>")
     def delete_recipe(recipe_id):
-
+        print(recipe_id)
         respones , status = Recipe.delete(recipe_id)
-        return respones
+
+        all_recipes = Recipe.get_all()
+    
+        return render_template('index.html', recipes=all_recipes)
 
 
 if __name__ == '__main__':

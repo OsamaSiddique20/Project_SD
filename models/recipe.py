@@ -33,12 +33,25 @@ class Recipe(db.Model):
     
     @classmethod
     def get_by_id(cls,id):
-        result = cls.query.filter(cls.id == id).first()
+        result = cls.query.filter(cls.recipe_id == id).first()
         return result.data if result else None
             
+    # @classmethod
+    # def update(cls, id, data):
+    #     recipe = cls.query.get(id)
+    #     if not recipe:
+    #         return {'message': 'Recipe not found'}, HTTPStatus.NOT_FOUND
+    #     recipe.name = data.get('name', recipe.name)
+    #     recipe.instructions = data.get('instructions', recipe.instructions)
+    #     recipe.ingredients = data.get('ingredients', recipe.ingredients)
+    #     recipe.category = data.get('category', recipe.category)
+    #     recipe.rating = data.get('rating', recipe.rating)
+    #     db.session.commit()
+    #     return {'message': 'Update successful'}, HTTPStatus.OK
+    
     @classmethod
     def update(cls, id, data):
-        recipe = cls.query.filter_by(id=id).first()
+        recipe = cls.query.get(id)
         if not recipe:
             return {'message': 'Recipe not found'}, HTTPStatus.NOT_FOUND
         recipe.name = data.get('name', recipe.name)
@@ -47,15 +60,17 @@ class Recipe(db.Model):
         recipe.category = data.get('category', recipe.category)
         recipe.rating = data.get('rating', recipe.rating)
         db.session.commit()
-        return recipe.data, HTTPStatus.OK
+        return {'message': 'Update successful'}, HTTPStatus.OK
+    
+
     @classmethod
     def delete(cls,id):
-        recipe = cls.query.filter(cls.id == id).first()
+        recipe = cls.query.get(id)
         if recipe is None:
             return {'message': 'recipe not found'}, HTTPStatus.NOT_FOUND
         db.session.delete(recipe)
         db.session.commit()
-        return {}, HTTPStatus.NO_CONTENT
+        return {'message': "Delete successful"}, HTTPStatus.NO_CONTENT
     
     @classmethod
     def add(cls, data):

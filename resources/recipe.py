@@ -49,10 +49,3 @@ class RecipeResource(Resource):
         return Recipe.delete(recipe_id)
 
 
-class RecipePublishResource(Resource):
-
-    def put(self, recipe_id):
-        return Recipe.publish(recipe_id)
-
-    def delete(self, recipe_id):
-        return Recipe.un_publish(recipe_id)
